@@ -82,4 +82,156 @@ Apart from averages by contestant and category, we can also see averages by cont
 Great! We see that ROLLUP added two new rows to the query result: overall averages for each contestant and a general overall average for all contestants:
 
 Exercise
-Show how much was spent for each category on each day, for each category in general, and for all days and all categories. Show the following columns: category, delivery_date, and the sum of total_price (rename the column total).
+Show how much was spent for each category on each day, for each category in general, and for all days and all categories. 
+Show the following columns: category, delivery_date, and the sum of total_price (rename the column total).*/
+
+SELECT
+	category,
+    delivery_date,
+	SUM(total_price) as total
+FROM delivery
+GROUP BY ROLLUP (category,delivery_date);
+
+/* Order of columns in ROLLUP
+Excellent. Now, you may have noticed that when we wrote:*/
+
+SELECT
+  full_name,
+  category, 
+  AVG(score) AS avg_score
+FROM contest_score
+GROUP BY ROLLUP (full_name, category);
+
+we got the following groupings:
+
+Average by full_name and category
+Average by full_name
+Overall average
+In other words, we saw the full_name average, but we didn't see an average for category only. That's because the column order matters in ROLLUP.
+
+Exercise
+Run the template query. Note that the order of columns inside the parentheses of ROLLUP has been reversed.
+
+As you can see, we now have the following groupings:
+
+Average by full_name and category
+Average by category
+Overall average
+
+Perfect! You can see that by reversing the order of the columns inside the ROLLUP's parentheses, we changed one of the groupings.
+
+As a general rule, ROLLUP will always show new grouping combinations by removing columns one by one, starting from the right:
+
+GROUP BY ROLLUP (A, B, C) =
+GROUP BY (A, B, C) +
+GROUP BY (A, B) +
+GROUP BY (A) +
+GROUP BY ()
+Okay, it's your turn now!
+
+Exercise
+Show how much was spent in each category on each day, on each day in general, and in general among all days and categories. 
+Show the following columns: category, delivery_date, and the sum of total_price (as total).
+
+SELECT
+	category,
+    delivery_date,
+	SUM(total_price) as total
+FROM delivery
+GROUP BY ROLLUP (delivery_date,category);
+
+The GROUPING() function
+When using multiple columns inside ROLLUP's parentheses, it's quite easy to get lost among the resulting rows. 
+SQL offers a function that tells you if the column is included in the grouping: GROUPING().
+
+The GROUPING() function takes one column as an argument. It returns a 0 if the column is used in the grouping and a 1 if it is not. Take a look:
+
+SELECT
+  full_name,
+  category, 
+  week,
+  AVG(score) AS avg_score,
+  GROUPING(full_name) AS F,
+  GROUPING(category) AS C, 
+  GROUPING(week) AS W
+FROM contest_score
+GROUP BY 
+  ROLLUP (full_name, category, week);
+As you can see, we added three GROUPING() functions in our SELECT clause.
+ Inside the parentheses, we put all columns from the parentheses of ROLLUP. Let's see what the result is.'
+
+Exercise
+Run the template query. As you can see, integer numbers appear in the final columns, denoting the grouping level for a given row.
+
+Exercise
+Show how much was spent, on average: for each supplier, in each category, for each supplier in general; and in general among all suppliers and categories.
+
+Show the following columns: supplier, category, the average total_price (rename the column to avg_price), and two new columns (S and C) 
+denoting whether the columns supplier or category are used in the grouping (0 if used, 1 otherwise).
+
+SELECT
+	supplier,
+	category,
+    AVG(total_price) as avg_price,
+    GROUPING(supplier) AS S,
+  	GROUPING(category) AS C 
+FROM delivery
+GROUP BY ROLLUP (supplier,category);
+
+Columns outside ROLLUP
+Well done! Another thing you may be wondering about is whether you need to include all grouping columns inside the ROLLUP parentheses.
+ No, you don't'! You can leave some columns outside ROLLUP:
+
+SELECT
+  full_name,
+  category, 
+  week,
+  AVG(score) AS avg_price
+FROM contest_score
+GROUP BY 
+  ROLLUP (full_name, category),
+  week;
+In the query above, all rows will be grouped by columns not included in ROLLUP. This means that the following grouping levels will be applied:
+
+GROUP BY full_name, category, week
+GROUP BY full_name, week
+GROUP BY week
+Exercise
+Run the template query and see what happens.
+
+Columns outside ROLLUP – exercise
+Good job! It's' your turn now—try a similar exercise with the delivery table.
+
+Exercise
+Show how much was spent on average for each category on each day and on each day in general.
+ Show the following columns: category, delivery_date, and the average total_price (name the column avg_price).
+ Do not show a single general average among all days and categories.
+ 
+ SELECT
+	category,
+    delivery_date,
+    AVG(total_price) as avg_price
+FROM delivery
+GROUP BY ROLLUP (category),delivery_date;
+
+Multiple ROLLUPs
+Nice! If you need even more fine-grained control over the grouping combinations, you can also use multiple ROLLUPs:
+
+SELECT
+  full_name,
+  category, 
+  week,
+  AVG(score) AS avg_score
+FROM contest_score
+GROUP BY 
+  ROLLUP(full_name, category), 
+  ROLLUP(week);
+The query above will create even more combinations than
+
+ROLLUP(full_name, category, week)
+because the grouping options of ROLLUP(full_name, category) and the grouping options of ROLLUP(week) are combined together.
+Take a look at the comparison:
+
+Exercise
+Run the template query, to see how multiple ROLLUPs work.
+
